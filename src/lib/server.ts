@@ -9,8 +9,11 @@ type BeaconData = {
 }
 
 const serverApiRequest = async (path: string): Promise<Array<ResponseItem>> => {
-  return await fetch(`https://t.syshub.ru${path}`).then((response) => {
+  return await fetch(`https://t.syshub.ru${path}`, { cache: 'force-cache' }).then((response) => {
     return response.json();
+  }).catch((error) => {
+    console.error(error);
+    throw error;
   });
 };
 
@@ -36,17 +39,18 @@ type RequestDataParams = {
 export const requestData = async (requestDataParams: RequestDataParams): Promise<Array<number>> => {
   const { id, param } = requestDataParams
   // should return [null, {v: 1}, {v: 4}, null] or Error (may return array (null | {v: number})[])
+  let array2: Array<number>;
   try {
-    const array = await serverApiRequest(`/query/data/${id}/param/${param}`);
-    const array2 = array.filter((item) => item).map(({ v }) => v);
+    const result = await serverApiRequest(`/query/data/${id}/param/${param}`);
+    array2 = result.filter((item) => item).map(({ v }) => v);
     sendAnalytics('/requestDone', {
       type: 'data',
       id,
       param,
     });
-    console.log('#41')
-    return array2; // return [1, 4]
   } catch (e) {
-    console.error('#43')
+    console.error('Ошибка получения данных:', e);
+  } finally {
+    return array2;
   }
 };
